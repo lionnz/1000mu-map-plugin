@@ -4,6 +4,21 @@
 
 ---
 
+## [v0.3.12] - 2026-07-07
+
+### 新增
+- **偏好设置可配置预设表**：默认高度预设表从代码硬编码（`DEFAULT_HEIGHT_CONFIG`）迁移到 Blender 偏好设置（`AddonPreferences`）。用户可在「编辑 → 偏好设置 → 插件 → 展开」中编辑关键词与高度。
+- 首次启用插件时自动填充 10 条内置默认预设。
+- 提供「恢复内置默认值」按钮一键还原。
+- 预设跟随 Blender 用户设置保存，所有 .blend 文件共享，团队成员可各自定制。
+
+### 变更
+- `MAP_OT_import_svg` 改为通过 `get_height_presets(context)` 从偏好设置读取预设，含降级保护。
+- `BUILTIN_HEIGHT_PRESETS` 仅作为内置默认值常量，不再在运行时直接使用。
+- 新增注册类：`MAP_PG_height_preset`、`MAP_UL_prefs_presets`、`MAP_OT_add_preset`、`MAP_OT_del_preset`、`MAP_OT_reset_presets`、`MAP_AddonPreferences`。
+
+---
+
 ## [v0.3.11] - 2026-07-07
 
 ### 修复
