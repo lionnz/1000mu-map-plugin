@@ -813,27 +813,31 @@ class MAP_AddonPreferences(bpy.types.AddonPreferences):
 # ------------------- UI Panel -------------------
 class MAP_UL_layer_list(bpy.types.UIList):
     def draw_item(self,context,layout,data,item,icon,active_data,active_propname,index):
-        split = layout.split(factor=0.08)
-        split.prop(item, 'is_active', text='', icon='HIDE_OFF' if item.is_active else 'HIDE_ON')
-        row = split.row(align=True)
-        row.prop(item, 'layer_name', text='', emboss=False)
-        # 随机开关按钮（骰子图标）
-        rand_icon = 'OUTLINER_OB_FORCE_FIELD' if item.use_rand_height else 'FORCE_FORCE'
-        row.prop(item, 'use_rand_height', text='', icon='SHADERFX', toggle=True)
+        split = layout.split(factor=0.04)
+        eye = split.row()
+        eye.prop(item, 'is_active', text='', icon='HIDE_OFF' if item.is_active else 'HIDE_ON')
+        right = split.row()
+        s_name = right.split(factor=0.25)
+        name_row = s_name.row()
+        name_row.prop(item, 'layer_name', text='', emboss=False)
+        rest = s_name.row()
+        s_values = rest.split(factor=0.83)
+        values_row = s_values.row(align=True)
+        values_row.prop(item, 'use_rand_height', text='', icon='SHADERFX', toggle=True)
         if item.use_rand_height:
-            # 显示随机区间：[最小] ~ [最大]
-            # 三段独立 row：min输入 | ~符号(固定窄) | max输入
-            # scale_x 控制相对宽度比例，0.28 让 ~ 列保持可见且不随面板拉伸
-            r_min = row.row(align=True)
+            r_min = values_row.row(align=True)
             r_min.prop(item, 'rand_height_min', text='')
-            r_tilde = row.row(align=True)
-            r_tilde.scale_x = 0.28
-            r_tilde.label(text='~')
-            r_max = row.row(align=True)
+            r_tilde = values_row.row(align=True)
+            r_tilde.scale_x = 0.35
+            s_tilde = r_tilde.split(factor=0.15)
+            s_tilde.label(text='')
+            s_tilde.label(text='~')
+            r_max = values_row.row(align=True)
             r_max.prop(item, 'rand_height_max', text='')
         else:
-            row.prop(item, 'height', text='')
-        row.prop(item, 'color', text='')
+            values_row.prop(item, 'height', text='')
+        color_row = s_values.row()
+        color_row.prop(item, 'color', text='')
 
 class MAP_PT_main_panel(bpy.types.Panel):
     bl_label="1000MU 3D周边地图插件"
