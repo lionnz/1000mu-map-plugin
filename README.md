@@ -18,7 +18,7 @@
 
 ## 安装
 
-1. 下载 [最新 Release](releases/) 中的 `1000MU_Map_Plugin_vXXX.py`
+1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_vXXX.py`
 2. Blender → 编辑 → 偏好设置 → 插件 → 从磁盘安装
 3. 选择下载的 `.py` 文件并启用
 4. 按 `N` 键打开侧边栏，点击 `1000Map` 标签
@@ -29,7 +29,8 @@
 
 | 版本 | 文件 | 说明 |
 |---|---|---|
-| v0.3.12 | [1000MU_Map_Plugin_v0312.py](releases/v0.3.12/) | 偏好设置可配置预设表（最新） |
+| v0.3.13 | [1000MU_Map_Plugin_v0313.py](releases/v0.3.13/) | 修复 Blender 4.5 兼容性（最新） |
+| v0.3.12 | [1000MU_Map_Plugin_v0312.py](releases/v0.3.12/) | 偏好设置可配置预设表 |
 | v0.3.11 | [1000MU_Map_Plugin_v0311.py](releases/v0.3.11/) | 修复 v0.3.10 回归 bug（无冗余槽未替换） |
 | v0.3.10 | [1000MU_Map_Plugin_v0310.py](releases/v0.3.10/) | 冗余材质槽自动合并 |
 | v0.3.9 | [1000MU_Map_Plugin_v039.py](releases/v0.3.9/) | 多材质球物体支持 |
