@@ -131,6 +131,11 @@ def force_normals_up(obj, epsilon=1e-5):
     obj.data.update()
 
 # ------------------- Property Groups -------------------
+def _on_use_rand_height(self, context):
+    if self.use_rand_height and self.height > 0:
+        self.rand_height_min = round(self.height * 0.5, 2)
+        self.rand_height_max = round(self.height * 1.5, 2)
+
 class MAP_PG_layer_item(bpy.types.PropertyGroup):
     is_active: bpy.props.BoolProperty(name="启用", default=True)
     layer_name: bpy.props.StringProperty(name="图层名", default="")
@@ -138,7 +143,8 @@ class MAP_PG_layer_item(bpy.types.PropertyGroup):
     color: bpy.props.FloatVectorProperty(name="颜色", subtype='COLOR', size=4, default=(0.8,0.8,0.8,1.0), min=0.0, max=1.0)
     use_rand_height: bpy.props.BoolProperty(
         name="随机高度", default=False,
-        description="启用后，该图层下所有物体的挤出高度将在设定区间内随机，产生错落感"
+        description="启用后，该图层下所有物体的挤出高度将在设定区间内随机，产生错落感",
+        update=_on_use_rand_height
     )
     rand_height_min: bpy.props.FloatProperty(
         name="最小", default=1.0, min=0.0, step=10,
