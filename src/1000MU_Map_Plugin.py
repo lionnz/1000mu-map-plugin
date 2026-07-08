@@ -870,7 +870,7 @@ class MAP_PT_main_panel(bpy.types.Panel):
             if len(props.layer_list)==0: layout.label(text='请先在导入标签页导入SVG',icon='INFO')
             else:
                 box=layout.box(); box.label(text=f'图层配置 ({len(props.layer_list)}个)',icon='MOD_BUILD')
-                row=box.row(); row.template_list('MAP_UL_layer_list','',props,'layer_list',props,'layer_list_idx',rows=5)
+                row=box.row(); row.template_list('MAP_UL_layer_list','',props,'layer_list',props,'layer_list_idx',rows=max(5, min(len(props.layer_list), 10)))
 
         elif props.active_tab==2:
             # --- 渲染与性能优化 ---
