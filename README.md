@@ -18,10 +18,24 @@
 
 ## 安装
 
+### 首次安装
+
 1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_v0314.zip`
 2. Blender → 编辑 → 偏好设置 → 插件 → 从磁盘安装
 3. 选择 `.zip` 文件，勾选启用
 4. 按 `N` 键打开侧边栏，点击 `1000Map` 标签
+
+### 从旧版升级（v0.3.13 及更早）
+
+旧版是单 `.py` 文件，v0.3.14 改为 `.zip` 包，必须彻底清除旧版残留才能正常安装：
+
+1. **关闭 Blender**
+2. 打开终端，执行：
+   ```bash
+   rm -rf ~/Library/Application\ Support/Blender/4.2/scripts/addons/1000MU_Map_Plugin*
+   ```
+3. 重新打开 Blender，检查偏好设置 → 插件列表，确认没有残留的 1000MU 条目（如有则点 Remove 清理）
+4. 再按上方「首次安装」步骤安装新版
 
 > 详细使用说明见 [技术说明书](docs/技术说明书_v0.3.14.md)
 
