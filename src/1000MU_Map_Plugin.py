@@ -813,11 +813,11 @@ class MAP_AddonPreferences(bpy.types.AddonPreferences):
 # ------------------- UI Panel -------------------
 class MAP_UL_layer_list(bpy.types.UIList):
     def draw_item(self,context,layout,data,item,icon,active_data,active_propname,index):
-        split = layout.split(factor=0.04)
+        split = layout.split(factor=0.06)
         eye = split.row()
         eye.prop(item, 'is_active', text='', icon='HIDE_OFF' if item.is_active else 'HIDE_ON')
         right = split.row()
-        s_name = right.split(factor=0.25)
+        s_name = right.split(factor=0.255)
         name_row = s_name.row()
         name_row.prop(item, 'layer_name', text='', emboss=False)
         rest = s_name.row()
