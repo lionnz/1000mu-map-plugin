@@ -820,8 +820,8 @@ class MAP_UL_layer_list(bpy.types.UIList):
         name_row = s_name.row()
         name_row.prop(item, 'layer_name', text='', emboss=False)
         rest = s_name.row()
-        s_values = rest.split(factor=0.765)
-        values_row = s_values.row(align=True)
+        rest_align = rest.row(align=True)
+        values_row = rest_align.row(align=True)
         values_row.prop(item, 'use_rand_height', text='', icon='SHADERFX', toggle=True)
         if item.use_rand_height:
             r_min = values_row.row(align=True)
@@ -835,7 +835,8 @@ class MAP_UL_layer_list(bpy.types.UIList):
             r_max.prop(item, 'rand_height_max', text='')
         else:
             values_row.prop(item, 'height', text='')
-        color_row = s_values.row()
+        color_row = rest_align.row()
+        color_row.scale_x = 0.31
         color_row.prop(item, 'color', text='')
 
 class MAP_PT_main_panel(bpy.types.Panel):
