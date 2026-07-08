@@ -814,7 +814,7 @@ class MAP_AddonPreferences(bpy.types.AddonPreferences):
 class MAP_UL_layer_list(bpy.types.UIList):
     def draw_item(self,context,layout,data,item,icon,active_data,active_propname,index):
         split = layout.split(factor=0.08)
-        split.prop(item, 'is_active', text='', icon='HIDE_OFF' if item.is_active else 'HIDE_ON')
+        split.prop(item, 'is_active', text='', icon='HIDE_OFF' if item.is_active else 'HIDE_ON', toggle=True)
         right = split.row()
         s_name = right.split(factor=0.261)
         name_row = s_name.row()
