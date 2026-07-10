@@ -145,6 +145,22 @@ class MAP_OT_import_svg(bpy.types.Operator):
 
         meshes = [o for o in new_objs if o.type=='MESH']
 
+        # 面三角化 → 三角面转四边面
+        # FillCurve 烘焙后的 N-gon 面在 GLB 导出三角化时可能产生0面积面，
+        # 先用 Blender 原生 BEAUTY 三角化再合并回四边面，让拓扑更稳定
+        for obj in meshes:
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            try:
+                bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
+                bpy.ops.mesh.tris_convert_to_quads(face_threshold=math.radians(1.0), shape_threshold=math.radians(1.0))
+            except RuntimeError as e:
+                print(f"[1000Map] 三角化/转四边面失败 {obj.name}: {e}")
+            bpy.ops.object.mode_set(mode='OBJECT')
+
         # 为导入的网格创建并分配材质
         # SVG 导入的曲线虽有 SVGMat 材质，但 convert 烘焙几何节点会清空材质，
         # 且 SVGMat 不含 Principled BSDF，视口显示不正确。

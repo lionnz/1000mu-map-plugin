@@ -204,6 +204,18 @@ class MAP_OT_retopology(bpy.types.Operator):
                 if mat is not None:
                     obj.data.materials.append(mat)
 
+        # 步骤10：面三角化 → 三角面转四边面
+        # 烘焙后的网格面可能不够稳定，先三角化再转四边面，
+        # 用 Blender 原生算法重建稳定拓扑，降低 GLB 导出三角化时产生0面积面的概率
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        try:
+            bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
+            bpy.ops.mesh.tris_convert_to_quads(face_threshold=math.radians(1.0), shape_threshold=math.radians(1.0))
+        except RuntimeError as e:
+            print(f"[1000Map] 三角化/转四边面失败 {obj.name}: {e}")
+        bpy.ops.object.mode_set(mode='OBJECT')
+
         # 清理不再引用的几何节点组，避免 bpy.data.node_groups 堆积
         if ng.users == 0:
             bpy.data.node_groups.remove(ng)
