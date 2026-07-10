@@ -71,7 +71,7 @@ bpy.ops.map.import_svg()
 - 解析 SVG 颜色，存储到 `context.scene['map_svg_colors']`
 - 用 `bpy.ops.import_curve.svg` 导入曲线
 - 按比例缩放、居中
-- 方案B几何节点 FillCurve 填充曲线 → 转网格
+- 几何节点 FillCurve 填充曲线 → 转网格
 - 从 SVG 颜色直接创建 `Mat_{图层名}` 标准材质（Principled BSDF + diffuse_color）并分配给网格
 
 **导入后检查：**
