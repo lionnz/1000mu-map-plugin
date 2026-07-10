@@ -124,7 +124,23 @@ for item in props.layer_list:
 # 可修改高度或颜色
 # props.layer_list[0].height = 15.0
 # props.layer_list[0].color = (0.9, 0.1, 0.1, 1.0)  # RGBA 线性值
+# props.layer_list[0].use_rand_height = True   # 开启随机高度
+# props.layer_list[0].rand_height_min = 5.0     # 随机高度下限
+# props.layer_list[0].rand_height_max = 20.0    # 随机高度上限
 ```
+
+**图层列表属性名速查表（props.py 定义，脚本中必须使用精确名称）：**
+
+| 属性名 | 类型 | 说明 |
+|--------|------|------|
+| `layer_name` | String | 图层名（只读） |
+| `height` | Float | 挤出高度(m) |
+| `color` | FloatVector(4) | RGBA 线性颜色值 |
+| `use_rand_height` | Bool | 随机高度开关 |
+| `rand_height_min` | Float | 随机高度下限 |
+| `rand_height_max` | Float | 随机高度上限 |
+
+> ⚠️ **常见错误**：属性名是 `use_rand_height`（非 `use_random_height`），脚本中写错会导致 `AttributeError` 崩溃。
 
 ### 步骤 3：一键挤出
 
@@ -319,11 +335,41 @@ else:
 
 ---
 
-## 五、独立小工具（不在主流程中，按需单独调用）
+## 五、网格平面优化（导入后、挤出前执行）
+
+位于插件「挤出」标签页的「网格平面优化」区块。**导入 SVG 后、一键挤出前**，可对网格执行0面积面检查和重新拓扑。
+
+### 5.0 检查0面积的面
+
+```python
+# 选中网格后执行
+bpy.ops.map.check_zero_area()
+```
+
+**作用：** 遍历选中网格，面积 < 0.0001 的面视为0面积面，将问题物体**移动至**集合「0面积的面」并报告。
+
+### 5.0b 重新拓扑
+
+```python
+# 选中网格后执行
+bpy.ops.map.retopology()
+```
+
+**作用：** 前置优化（按距离合并 0.0001m + 有限融并 0.1°）→ bmesh 提取边界轮廓线 → 转曲线 → 几何节点 FillCurve 填充 → 转网格，消除0面积面。
+
+> ⚠️ **重要经验：文字层不需要执行重新拓扑**
+> - 插件导入 SVG 时已用几何节点 FillCurve 填充，导入后的网格是干净的 N-gon，通常没有0面积面
+> - 重新拓扑的 bmesh 删面→提取轮廓→FillCurve 重建流程，对复杂文字形状可能**引入新的0面积面**
+> - **正确做法**：检查0面积面后，仅对有问题的物体执行重新拓扑，不要无差别对全部网格执行
+> - 如果文字层不挤出（仅平面放置在道路上方），完全不需要参与重新拓扑
+
+---
+
+## 六、独立小工具（不在主流程中，按需单独调用）
 
 以下三个工具位于插件「导出」标签页的「实用小工具」区域，**不在 SVG to 3D 的主流程中**，需单独测试或使用。
 
-### 5.1 UVmap 批量清理
+### 6.1 UVmap 批量清理
 
 ```python
 # 选中网格后执行
@@ -336,7 +382,7 @@ bpy.ops.map.clean_uvmap()
 
 **作用：** 确保每个网格有且仅有一个名为 `UVMap` 的 UV 层。多 UV 时保留活动层、删除其余并改名。
 
-### 5.2 自定义法向批量清理
+### 6.2 自定义法向批量清理
 
 ```python
 # 选中网格后执行（modal + timer，前台正常，后台不触发 timer）
@@ -353,7 +399,7 @@ bpy.ops.map.clear_split_normals()
 >         bpy.ops.mesh.customdata_custom_splitnormals_clear()
 > ```
 
-### 5.3 按所选面批量设置原点
+### 6.3 按所选面批量设置原点
 
 ```python
 # 必须在编辑模式下，选中面后执行
@@ -367,7 +413,7 @@ bpy.ops.map.set_origin_to_face()
 
 ---
 
-## 六、关键参数说明
+## 七、关键参数说明
 
 | 参数 | 属性路径 | 类型 | 默认值 | 说明 |
 |------|---------|------|--------|------|
