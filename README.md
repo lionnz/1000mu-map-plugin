@@ -23,14 +23,14 @@
 
 ### 首次安装
 
-1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_v0315.zip`
+1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_v0316.zip`
 2. Blender → 编辑 → 偏好设置 → 插件 → 从磁盘安装
 3. 选择 `.zip` 文件，勾选启用
 4. 按 `N` 键打开侧边栏，点击 `1000Map` 标签
 
 ### 从旧版升级
 
-**从 v0.3.14 升级**：偏好设置 → 插件，Remove 旧版，再从磁盘安装新版。
+**从 v0.3.15 升级**：偏好设置 → 插件，Remove 旧版，再从磁盘安装新版。
 
 **从 v0.3.13 及更早升级**：旧版是单 `.py` 文件，v0.3.14 起改为 `.zip` 包，必须彻底清除旧版残留：
 
@@ -42,13 +42,14 @@
 3. 重新打开 Blender，检查偏好设置 → 插件列表，确认没有残留的 1000MU 条目（如有则点 Remove 清理）
 4. 再按上方「首次安装」步骤安装新版
 
-> 详细使用说明见 [技术说明书](docs/技术说明书_v0.3.15.md)
+> 详细使用说明见 [技术说明书](docs/技术说明书_v0.3.16.md)
 
 ## 版本下载
 
 | 版本 | 文件 | 说明 |
 |---|---|---|
-| v0.3.15 | [1000MU_Map_Plugin_v0315.zip](releases/v0.3.15/) | 模块化拆分、导入即有材质、新增实用小工具箱（最新） |
+| v0.3.16 | [1000MU_Map_Plugin_v0316.zip](releases/v0.3.16/) | 重新拓扑前置优化、0面积面移动至集合、视图裁剪×1000预设（最新） |
+| v0.3.15 | [1000MU_Map_Plugin_v0315.zip](releases/v0.3.15/) | 模块化拆分、导入即有材质、新增实用小工具箱 |
 | v0.3.14 | [1000MU_Map_Plugin_v0314.zip](releases/v0.3.14/) | 内置拼音引擎，开箱即用 |
 | v0.3.8 | [1000MU_Map_Plugin_v038.py](releases/v0.3.8/) | 用户 AI coding 初版（归档参考） |
 
@@ -59,7 +60,7 @@
 
 ## 文档
 
-- [技术说明书 v0.3.15](docs/技术说明书_v0.3.15.md) — 完整操作手册与技术说明
+- [技术说明书 v0.3.16](docs/技术说明书_v0.3.16.md) — 完整操作手册与技术说明
 - [svg-to-glb-pipeline.md](docs/svg-to-glb-pipeline.md) — AI 自动化导出流程（含后台脚本模板）
 - [变更日志](CHANGELOG.md) — 全版本变更记录
 
