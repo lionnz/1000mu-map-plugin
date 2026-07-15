@@ -4,6 +4,32 @@
 
 ---
 
+## [v0.3.17] - 2026-07-15
+
+### 面板布局调整
+- **着色方式移入导入页**：「视图着色检查」从导出-实用小工具移入导入-视图设置板块，重命名为「着色方式」并增加图标
+- **清理工具移入导出页**：「从该文件中清理未使用的数据」从导入页移入导出-实用小工具首位，与修复工具归类统一
+
+### 新增功能
+- **曲线物体网格优化**：挤出-网格平面优化新增「对所选曲线物体进行网格优化」按钮，FillCurve 填充→转网格→面三角化→转四边面→兜底清理0面积面，适用于直接用 Blender 原生导入的 SVG 曲线物体
+
+### BUG 修复
+- **修复清理提示红叉BUG**：根因是 UI 中使用了无效图标 `ROCKET`（Blender 4.2 不存在），导致 `draw()` 每次重绘抛出 `TypeError`，污染报告系统使后续 operator 的 INFO 提示显示为红叉。改为有效图标 `PLAY`
+- **清理实现优化**：`purge_scene` 改为手动 `bpy.data.X.remove()`，避免 `orphans_purge` 内层 operator 的 ERROR 报告穿透到状态栏
+
+### 提示文案优化
+- 0结果时给出「无需处理」提示（如「场景很干净，没有孤立数据块」）
+- 有失败时用 WARNING 级别报告，全成功时简洁明了
+
+### 代码分块调整
+- `build_atlas` 和 `purge_scene` 移入 `repair_tools.py`，删除 `scene_tools.py`
+- 代码分块与 UI 面板对应：pipeline.py（核心流程）、view_tools.py（视图设置）、mesh_tools.py（网格优化）、repair_tools.py（实用小工具）
+
+### 调试经验沉淀
+- 新增 [blender-plugin-debug-guide.md](docs/blender-plugin-debug-guide.md)，记录终端启动 Blender 定位 GUI BUG 的方法
+
+---
+
 ## [v0.3.16] - 2026-07-10
 
 ### 重新拓扑优化
