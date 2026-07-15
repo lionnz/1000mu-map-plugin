@@ -17,7 +17,6 @@ from .view_tools import (
 from .mesh_tools import (
     MAP_OT_check_zero_area,
     MAP_OT_retopology,
-    MAP_OT_optimize_curve,
 )
 from .repair_tools import (
     MAP_OT_purge_scene,
@@ -44,7 +43,6 @@ classes = (
     # 网格工具
     MAP_OT_check_zero_area,
     MAP_OT_retopology,
-    MAP_OT_optimize_curve,
     # 修复与清理工具（导出-实用小工具）
     MAP_OT_purge_scene,
     MAP_OT_clean_uvmap,

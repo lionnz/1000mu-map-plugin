@@ -97,8 +97,6 @@ class MAP_PT_main_panel(bpy.types.Panel):
             row.operator("map.check_zero_area", text='检查所选网格的"0面积的面"', icon='ZOOM_ALL')
             row = box.row(align=True)
             row.operator("map.retopology", text="对所选网格物体进行重新拓扑", icon='MOD_REMESH')
-            row = box.row(align=True)
-            row.operator("map.optimize_curve", text="对所选曲线物体进行网格优化", icon='CURVE_DATA')
 
             layout.separator()
 
