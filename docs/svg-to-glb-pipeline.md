@@ -40,12 +40,40 @@ SVG 的视口（viewBox）尺寸取决于设计工具导出时的画布设置。
 
 **插件内部换算公式：** `scale_factor = 3543.0 * (ratio_m / ratio_px)`
 
-### 确认话术
+### 确认话术（第一步：导入前确认）
 
 > 开始将 SVG 转换为 3D 地图模型前，需要确认以下关键参数：
 > 1. **像素转物理单位**（必须）：SVG 中多少 px 对应实际多少 m？例如你上次用 `100px = 10m`
 > 2. **曲线精度**：默认 4，是否需要调整？（1~12，越高边缘越平滑但面数更多）
 > 3. **GLB 导出路径**（必须）：请提供完整绝对路径
+
+### 确认话术（第二步：刷新图层列表后确认随机高度）
+
+刷新图层列表后，将读取到的图层名列表展示给用户，询问是否需要开启某些图层的随机高度：
+
+> 以下是刷新到的 **N 个图层** 及其预设高度：
+> | 图层名 | 高度(m) |
+> |--------|---------|
+> | 绿化 | 10 |
+> | 中色box | 40 |
+> | ... | ... |
+>
+> 是否需要为某些图层开启**随机高度**？
+> - 开启后，每个该图层的物体在挤出时会随机分配高度（区间 = 基础高度 × 0.5 ~ 基础高度 × 1.5），产生错落感
+> - 例如：中色box 基础高度 40m，随机区间为 20~60m
+> - 如果不需要，直接回复"不需要"
+> - 如果需要，请告知哪些图层要开启随机高度
+
+### 随机高度算法（插件内置，了解即可）
+
+开启 `use_rand_height` 时，插件自动计算：[utils.py `_on_use_rand_height`](file:///Users/liuhao/works/TRAE/trae0707/1000mu-map-plugin/src/1000MU_Map_Plugin/utils.py#L144-L146)
+
+```
+rand_height_min = 基础高度 × 0.5
+rand_height_max = 基础高度 × 1.5
+```
+
+用户也可在脚本中手动覆盖 `rand_height_min` / `rand_height_max` 自定义区间。
 
 ### 禁止行为
 
@@ -143,6 +171,26 @@ bpy.ops.map.refresh_layer_list()
 - 按基础名（去掉 `.001` `.002` 后缀）去重生成图层列表
 - 自动匹配内置高度预设（见下表），未匹配的随机 1~10m
 - 从 `map_svg_colors` 读取颜色填入图层
+
+**刷新后必须执行的步骤：确认随机高度**
+
+<font color="red">刷新图层列表后，必须将图层名和预设高度展示给用户，询问是否需要开启随机高度。此步骤不可跳过。</font>
+
+```python
+# 刷新后，遍历 layer_list 展示给用户
+print("图层列表:")
+for i, item in enumerate(props.layer_list):
+    print(f"  [{i}] {item.layer_name}: height={item.height:.1f}m")
+
+# 用户选择哪些图层需要随机高度后，在脚本中设置：
+rand_layers = {"中色box", "浅色box"}  # 用户确认的图层名
+for item in props.layer_list:
+    if item.layer_name in rand_layers:
+        item.use_rand_height = True
+        # item.rand_height_min = 10.0   # 可选：自定义下限
+        # item.rand_height_max = 60.0   # 可选：自定义上限
+        print(f"  开启随机高度: {item.layer_name} (区间 {item.rand_height_min}~{item.rand_height_max}m)")
+```
 
 **内置高度预设（constants.py）：**
 
@@ -333,6 +381,17 @@ for m in meshes:
     m.select_set(True)
 bpy.context.view_layer.objects.active = meshes[0]
 bpy.ops.map.refresh_layer_list()
+
+# 2b. 展示图层列表 + 确认随机高度（不可跳过）
+print("图层列表:")
+for i, item in enumerate(props.layer_list):
+    print(f"  [{i}] {item.layer_name}: height={item.height:.1f}m")
+#  -- 此时必须将图层列表展示给用户，等待确认哪些图层需要随机高度 --
+#  -- 用户确认后，设置 use_rand_height --
+# rand_layers = {"中色box", "浅色box"}  # 示例：用户确认的图层
+# for item in props.layer_list:
+#     if item.layer_name in rand_layers:
+#         item.use_rand_height = True
 
 # 3. 一键挤出
 bpy.ops.map.generate_3d()
