@@ -4,22 +4,58 @@
 
 ---
 
-## 一、前置确认（必须先与用户确认）
+> ## ⛔ 致命警告：禁止使用默认参数值直接执行
+>
+> **`ratio_px` 和 `ratio_m` 是控制整个模型物理比例的核心参数。**
+>
+> - 代码示例中的 `ratio_px=10.0, ratio_m=1.0` 是**占位符**，不是合理默认值
+> - 不同 SVG 的像素跨度差异巨大（可能是 100px 也可能是 100000px），`10px=1m` 的默认值几乎必定导致模型尺寸严重错误
+> - **每个 SVG 都有自己正确的 px→m 换算关系**，这是只有用户知道的业务信息，AI 不可能自行推算
+> - 如果用户没有提供像素转物理单位，**必须停止流程并追问**，而不是使用占位符值直接执行
+> - 用错了比例 = 整个模型作废，GLB 文件毫无意义
+>
+> **`curve_res` 影响模型精度和面数：**
+> - 默认值 4 对大多数场景是合理的折中，但仍应确认用户是否有特殊要求
 
-当用户要求 AI 直接使用某个 `.svg` 文件生成 3D map 时，AI **必须先确认以下 3 项关键补充信息**，不可自行假设默认值：
+---
 
-| 确认项 | 对应插件属性 | 说明 |
-|--------|-------------|------|
-| **像素转换物理单位** | `ratio_px` + `ratio_m` | SVG 中的像素与实际距离的换算关系。需问用户：「SVG 中多少像素对应实际多少米？」例如「10px = 1m」。 |
-| **曲线精度** | `curve_res` | 曲线转网格的采样精度（1~12）。数值越高边缘越平滑，但面数更多。需问用户是否有特殊要求，无则用默认值 4。 |
-| **导出位置** | GLB 文件保存路径 | 需问用户：「GLB 导出到哪个目录？文件名是什么？」必须使用绝对路径。 |
+## 一、前置确认（⚡ 强制步骤，禁止跳过）
 
-**确认话术示例：**
+<font color="red">**此步骤不是"建议"，是强制性要求。确认完成后才能进入后续流程。**</font>
 
-> 我可以使用 1000MU 3D MAP 插件将该 SVG 转换为 3D 地图模型。开始前需要确认 3 点：
-> 1. 像素转换物理单位：SVG 中多少像素对应实际多少米？（例如 10px = 1m）
-> 2. 曲线精度：默认 4，是否需要调整？（1~12，越高越平滑）
-> 3. GLB 导出到哪个路径？（请提供完整路径，如 `/path/to/output.glb`）
+当用户要求 AI 使用某个 `.svg` 文件生成 3D map 时，AI **必须先确认以下 3 项关键补充信息**。如果用户没有提供其中任何一项，AI 必须使用 `AskUserQuestion` 工具主动询问，**禁止使用文档中的示例值或默认值直接执行**：
+
+| 确认项 | 对应插件属性 | 严重程度 | 说明 |
+|--------|-------------|---------|------|
+| **像素转换物理单位** | `ratio_px` + `ratio_m` | 🔴 **致命** | SVG 中的像素与实际距离的换算关系。必须问用户：「SVG 中多少像素对应实际多少米？」例如 `100px = 10m`。**此参数无通用默认值，每个 SVG 都不同。** |
+| **曲线精度** | `curve_res` | 🟡 重要 | 曲线转网格的采样精度（1~12）。数值越高边缘越平滑，但面数更多。需问用户是否有特殊要求，无则使用默认值 4。 |
+| **导出位置** | GLB 文件保存路径 | 🔴 **致命** | 必须使用绝对路径。需问用户：「GLB 导出到哪个目录？文件名是什么？」 |
+
+### 为什么像素转物理单位不能有默认值？
+
+SVG 的视口（viewBox）尺寸取决于设计工具导出时的画布设置。例如：
+- 一张规划总图的导出画布可能是 5000×3000 px，对应实际 500×300 m
+- 一张区域详图可能是 800×600 px，对应实际 80×60 m
+- 两个场景的正确 `ratio_px / ratio_m` 完全不同
+
+**插件内部换算公式：** `scale_factor = 3543.0 * (ratio_m / ratio_px)`
+
+### 确认话术
+
+> 开始将 SVG 转换为 3D 地图模型前，需要确认以下关键参数：
+> 1. **像素转物理单位**（必须）：SVG 中多少 px 对应实际多少 m？例如你上次用 `100px = 10m`
+> 2. **曲线精度**：默认 4，是否需要调整？（1~12，越高边缘越平滑但面数更多）
+> 3. **GLB 导出路径**（必须）：请提供完整绝对路径
+
+### 禁止行为
+
+<font color="red">以下行为会导致生成**完全错误的模型**，必须避免：</font>
+
+| ❌ 禁止行为 | 后果 | 正确做法 |
+|------------|------|----------|
+| 用户没给 `ratio_px/ratio_m` 就用示例值跑流程 | 模型比例错误，GLB 作废 | 用 AskUserQuestion 追问用户 |
+| 假设"上次的配置应该适用这个新 SVG" | 每个 SVG 的像素跨度不同 | 重新确认每一个新 SVG 的参数 |
+| 只确认了"导出路径"就以为参数齐全 | 缺少最关键的比例参数 | 检查清单：ratio + curve_res + glb_path 三项齐全 |
 
 ---
 
@@ -57,15 +93,23 @@ bpy.ops.preferences.addon_enable(module='1000MU_Map_Plugin')
 ```python
 props = bpy.context.scene.map_props
 
-# 设置用户确认的参数
-props.svg_filepath = '/path/to/input.svg'   # SVG 文件绝对路径
-props.ratio_px = 10.0                        # 像素值（用户确认）
-props.ratio_m = 1.0                          # 对应的实际米数（用户确认）
-props.curve_res = 4                          # 曲线精度（用户确认，默认4）
+# === 用户确认的参数（以下值均为占位符，必须替换） ===
+props.svg_filepath = '/absolute/path/to/input.svg'   # SVG 文件绝对路径
+props.ratio_px = 0.0                                   # ⚠️ 必须由用户确认后填入
+props.ratio_m = 0.0                                   # ⚠️ 必须由用户确认后填入
+props.curve_res = 4                                    # 曲线精度（确认后填入）
+
+# === 参数校验 ===
+assert props.ratio_px > 0 and props.ratio_m > 0, (
+    f"致命错误: ratio_px({props.ratio_px}) 和 ratio_m({props.ratio_m}) 未设置有效值。"
+    f"必须先向用户确认 SVG 的像素→米换算关系。"
+)
 
 # 执行导入
 bpy.ops.map.import_svg()
 ```
+
+> ⚠️ **执行前必须确保 `ratio_px` 和 `ratio_m` 已被替换为用户确认的真实值**。代码中的 `0.0` 会触发 assert 报错，这是有意为之——防止 AI 忘记替换占位符直接执行。
 
 **导入做了什么：**
 - 解析 SVG 颜色，存储到 `context.scene['map_svg_colors']`
@@ -255,12 +299,22 @@ for k in list(sys.modules):
         del sys.modules[k]
 bpy.ops.preferences.addon_enable(module='1000MU_Map_Plugin')
 
-# === 用户确认的参数 ===
-svg_path = '/path/to/input.svg'        # 【需确认】SVG 文件路径
-glb_path = '/path/to/output.glb'       # 【需确认】GLB 导出路径
-ratio_px = 10.0                         # 【需确认】像素值
-ratio_m = 1.0                           # 【需确认】对应米数
-curve_res = 4                           # 【需确认】曲线精度（默认4）
+# ============================================================
+# ⚠️ 用户确认的参数 —— 以下占位符值必须替换为真实值
+# ============================================================
+svg_path = '/absolute/path/to/input.svg'       # 【必须】SVG 文件绝对路径
+glb_path = '/absolute/path/to/output.glb'      # 【必须】GLB 导出绝对路径
+ratio_px = 0.0                                  # ⚠️ 【必须确认】像素值，禁止用占位符 0.0 执行
+ratio_m = 0.0                                  # ⚠️ 【必须确认】对应米数，禁止用占位符 0.0 执行
+curve_res = 4                                   # 【需确认】曲线精度（1~12），确认后方可使用
+
+# === 致命参数校验：不通过则中止 ===
+assert ratio_px > 0 and ratio_m > 0, (
+    f"致命错误: ratio_px={ratio_px} ratio_m={ratio_m}。"
+    f"这些参数控制模型的物理比例，必须先向用户确认 SVG 的 px→m 换算关系。"
+    f"每个 SVG 的比例都不同，不可复用其他 SVG 的值。"
+)
+assert os.path.exists(svg_path), f"SVG 文件不存在: {svg_path}"
 
 # === 主流程 ===
 props = bpy.context.scene.map_props
@@ -416,14 +470,16 @@ bpy.ops.map.set_origin_to_face()
 
 ## 七、关键参数说明
 
-| 参数 | 属性路径 | 类型 | 默认值 | 说明 |
-|------|---------|------|--------|------|
-| SVG 文件 | `props.svg_filepath` | String | - | SVG 文件绝对路径 |
-| 像素值 | `props.ratio_px` | Float | 10.0 | SVG 中像素对应的参考尺寸 |
-| 米数 | `props.ratio_m` | Float | 1.0 | 上述像素对应的实际距离（米） |
-| 曲线精度 | `props.curve_res` | Int | 4 | 曲线转网格采样精度（1~12） |
-| 仅导出可见 | `props.exp_visible_only` | Bool | True | 仅导出视口可见物体 |
-| 应用修改器 | `props.exp_apply_modifiers` | Bool | True | 导出前应用修改器 |
-| 拼音防呆 | `props.exp_pinyin_safe` | Bool | True | 导出时中文转拼音 |
+| 参数 | 属性路径 | 类型 | 默认值 | 必确认 | 说明 |
+|------|---------|------|--------|--------|------|
+| SVG 文件 | `props.svg_filepath` | String | - | 🔴 必须 | SVG 文件绝对路径，由用户提供 |
+| 像素值 | `props.ratio_px` | Float | 0.0 | 🔴 **必须** | SVG 中多少像素。**无默认值，必须由用户确认。示例：100px** |
+| 米数 | `props.ratio_m` | Float | 0.0 | 🔴 **必须** | 上述像素对应的实际距离。**无默认值，必须由用户确认。示例：10m** |
+| 曲线精度 | `props.curve_res` | Int | 4 | 🟡 建议 | 曲线转网格采样精度（1~12）。默认 4 对多数场景合理 |
+| 仅导出可见 | `props.exp_visible_only` | Bool | True | ⬜ 可选 | 仅导出视口可见物体 |
+| 应用修改器 | `props.exp_apply_modifiers` | Bool | True | ⬜ 可选 | 导出前应用修改器 |
+| 拼音防呆 | `props.exp_pinyin_safe` | Bool | True | ⬜ 可选 | 导出时中文转拼音 |
 
-**比例换算公式：** `scale_factor = 3543.0 * (ratio_m / ratio_px)`
+**比例换算公式（插件内部，了解即可）：** `scale_factor = 3543.0 * (ratio_m / ratio_px)`
+
+> 🔴 **ratio_px 和 ratio_m 是最容易出错的参数**。每次处理新的 SVG 都必须重新确认。不可复用之前 SVG 的比例值。
