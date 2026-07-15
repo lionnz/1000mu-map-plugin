@@ -89,9 +89,6 @@ class MAP_PT_main_panel(bpy.types.Panel):
             layout.separator()
 
             btn_row=layout.row(); btn_row.scale_y=1.2; btn_row.operator('map.import_svg',icon='LIGHT_SUN')
-            if len(props.layer_list)>0:
-                layout.label(text=f"已导入 {len(props.layer_list)} 个图层",icon='INFO')
-                gen_row=layout.row(); gen_row.scale_y=1.2; gen_row.operator('map.generate_3d',icon='PLAY',text='一键挤出')
 
         elif props.active_tab==1:
             box = layout.box()

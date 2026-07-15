@@ -23,6 +23,9 @@
 - **修复清理提示红叉BUG**：根因是 UI 中使用了无效图标 `ROCKET`（Blender 4.2 不存在），导致 `draw()` 每次重绘抛出 `TypeError`，污染报告系统使后续 operator 的 INFO 提示显示为红叉。改为有效图标 `PLAY`
 - **清理实现优化**：`purge_scene` 改为手动 `bpy.data.X.remove()`，避免 `orphans_purge` 内层 operator 的 ERROR 报告穿透到状态栏
 - **修复 SVG 嵌套 `<g>` 导致错误的图层命名**：`apply_target_id` 递归遍历 SVG 时，嵌套子 `<g>` 的 id 会覆盖父组 id，导致出现不应存在的图层（如「路」出现在「支路」内、「建筑」出现在「浅色box」内）。修复方案：(a) 新增 `current_target_id is None` 守卫，已设置父组名后不允许嵌套 `<g>` 覆盖；(b) 在调用处检测 SVG 根节点下唯一的 `<g>` 包装层（Figma 导出的 Frame），从其子元素开始递归而非从 Frame 本身开始
+- **修复 SVG 颜色解析的嵌套 `<g>` 覆盖**：`parse_svg_colors` 的 `traverse()` 存在与 `apply_target_id` 相同的嵌套 `<g>` 覆盖 bug，导致颜色被关联到错误的图层名。同步修复
+- **移除导入页残留的「一键挤出」按钮**：导入页底部曾有一个与挤出页共享 `layer_list` 显示条件的「一键挤出」按钮，导致在挤出页点击「刷新图层列表」后、切回导入页时会在底部出现一个孤立的挤出按钮。该按钮已删除，"一键挤出"仅在挤出页提供
+- **新增 `context.screen` / `context.area` 守卫**：`view_tools.py` 和 `repair_tools.py` 中直接访问 `context.screen.areas` 和 `context.area.regions`，在无屏幕或无区域的上下文中会抛 `AttributeError`。已添加 `if context.screen:` / `if context.area:` 提前返回的空值守卫
 
 ### 提示文案优化
 - 0结果时给出「无需处理」提示（如「场景很干净，没有孤立数据块」）

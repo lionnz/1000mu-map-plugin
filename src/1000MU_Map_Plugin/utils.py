@@ -111,11 +111,18 @@ def parse_svg_colors(svg_path):
                     except Exception as e:
                         print(f"[1000Map] 颜色解析失败 {fill}: {e}")
         else:
-            if raw_id:
+            if raw_id and current_layer is None:
                 decoded = decode_figma_id(raw_id)
                 if decoded and decoded.lower() not in INVALID_LAYER_NAMES: current_layer = decoded
         for child in el: traverse(child, current_layer)
-    traverse(root, None)
+
+    root_g = [c for c in root if c.tag.split('}')[-1] == 'g']
+    if len(root_g) == 1:
+        for child in root_g[0]:
+            traverse(child, None)
+    else:
+        for child in root:
+            traverse(child, None)
     return colors
 
 def force_normals_up(obj, epsilon=1e-5):

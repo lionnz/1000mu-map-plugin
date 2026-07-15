@@ -111,9 +111,10 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
             progress = self._index / self._total
             context.scene.batch_clear_progress = progress
 
-            for region in context.area.regions:
-                if region.type == 'UI':
-                    region.tag_redraw()
+            if context.area:
+                for region in context.area.regions:
+                    if region.type == 'UI':
+                        region.tag_redraw()
 
             if self._index >= self._total:
                 self.finish(context)

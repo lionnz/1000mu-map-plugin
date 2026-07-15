@@ -34,13 +34,13 @@ class MAP_OT_set_clip(bpy.types.Operator):
         props = context.scene.map_props
         props.clip_preset = self.preset
         start, end = self.CLIP_PRESETS[self.preset]
-        # 遍历所有3D视图区域
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D':
-                for space in area.spaces:
-                    if space.type == 'VIEW_3D':
-                        space.clip_start = start
-                        space.clip_end = end
+        if context.screen:
+            for area in context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    for space in area.spaces:
+                        if space.type == 'VIEW_3D':
+                            space.clip_start = start
+                            space.clip_end = end
         self.report({'INFO'}, f"视图裁剪: Start={start}m / End={end}m")
         return {'FINISHED'}
 
@@ -72,33 +72,33 @@ class MAP_OT_set_shading(bpy.types.Operator):
         props = context.scene.map_props
         props.shading_preset = self.preset
         studio_light_name, color_type = self.SHADING_PRESETS[self.preset]
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D':
-                for space in area.spaces:
-                    if space.type == 'VIEW_3D':
-                        shading = space.shading
-                        shading.type = 'SOLID'
-                        shading.light = 'STUDIO'
-                        if studio_light_name is None:
-                            # 默认预设：切换回 Blender 默认灯棚
-                            for name in ['studio.exr', 'Default', 'studio']:
+        if context.screen:
+            for area in context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    for space in area.spaces:
+                        if space.type == 'VIEW_3D':
+                            shading = space.shading
+                            shading.type = 'SOLID'
+                            shading.light = 'STUDIO'
+                            if studio_light_name is None:
+                                for name in ['studio.exr', 'Default', 'studio']:
+                                    try:
+                                        shading.studio_light = name
+                                        break
+                                    except (TypeError, RuntimeError):
+                                        continue
+                            else:
                                 try:
-                                    shading.studio_light = name
-                                    break
-                                except (TypeError, RuntimeError):
-                                    continue
-                        else:
-                            try:
-                                shading.studio_light = studio_light_name
-                            except (TypeError, RuntimeError) as e:
-                                print(f"[1000Map] 设置灯棚失败 '{studio_light_name}': {e}")
-                                try:
-                                    available = [sl.name for sl in context.preferences.studio_lights if studio_light_name.lower() in sl.name.lower()]
-                                    if available:
-                                        shading.studio_light = available[0]
-                                except (TypeError, RuntimeError, AttributeError):
-                                    pass
-                        shading.color_type = color_type
+                                    shading.studio_light = studio_light_name
+                                except (TypeError, RuntimeError) as e:
+                                    print(f"[1000Map] 设置灯棚失败 '{studio_light_name}': {e}")
+                                    try:
+                                        available = [sl.name for sl in context.preferences.studio_lights if studio_light_name.lower() in sl.name.lower()]
+                                        if available:
+                                            shading.studio_light = available[0]
+                                    except (TypeError, RuntimeError, AttributeError):
+                                        pass
+                            shading.color_type = color_type
         label = {'DEFAULT': '默认着色', 'PAINT_MAT': 'paint.sl+材质', 'PAINT_TEX': 'paint.sl+纹理'}[self.preset]
         self.report({'INFO'}, f"视图着色: {label}")
         return {'FINISHED'}
