@@ -8,6 +8,7 @@ class MAP_AddonPreferences(bpy.types.AddonPreferences):
 
     height_presets: bpy.props.CollectionProperty(type=MAP_PG_height_preset)
     active_preset_idx: bpy.props.IntProperty(default=0)
+    presets_hash: bpy.props.StringProperty(default="", description="内置预设内容指纹，用于检测升级后自动更新预设表")
 
     def draw(self, context):
         layout = self.layout

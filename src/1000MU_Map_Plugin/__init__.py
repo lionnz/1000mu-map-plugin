@@ -31,7 +31,7 @@ from .operators import classes as operator_classes
 from .operators.repair_tools import _reset_batch_clear_state
 from .ui import MAP_UL_layer_list, MAP_UL_prefs_presets, MAP_PT_main_panel
 from .preferences import MAP_AddonPreferences
-from .constants import BUILTIN_HEIGHT_PRESETS, ADDON_MODULE
+from .constants import BUILTIN_HEIGHT_PRESETS, BUILTIN_PRESETS_HASH, ADDON_MODULE
 
 classes = (
     MAP_PG_layer_item,
@@ -57,11 +57,14 @@ def register():
 
     try:
         prefs = bpy.context.preferences.addons[ADDON_MODULE].preferences
-        if prefs is not None and len(prefs.height_presets) == 0:
+        if prefs is not None and prefs.presets_hash != BUILTIN_PRESETS_HASH:
+            prefs.height_presets.clear()
             for kw, h in BUILTIN_HEIGHT_PRESETS:
                 item = prefs.height_presets.add()
                 item.keyword = kw
                 item.height = h
+            prefs.presets_hash = BUILTIN_PRESETS_HASH
+            print("[1000Map] 检测到内置预设已更新，已自动同步至偏好设置")
     except Exception as e:
         print(f"[1000Map] 填充默认预设失败（可手动点击「恢复内置默认值」）: {e}")
 

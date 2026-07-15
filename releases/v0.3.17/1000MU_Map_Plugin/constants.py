@@ -1,3 +1,5 @@
+import hashlib
+
 INVALID_LAYER_NAMES = {'svg','g','path','rect','circle','ellipse','polygon','polyline','line','layer','group','root','vector'}
 
 BUILTIN_HEIGHT_PRESETS = [
@@ -13,5 +15,7 @@ BUILTIN_HEIGHT_PRESETS = [
     ("绿化", 10.0),
     ("水", 5.0),
 ]
+
+BUILTIN_PRESETS_HASH = hashlib.md5(str(BUILTIN_HEIGHT_PRESETS).encode()).hexdigest()
 
 ADDON_MODULE = "1000MU_Map_Plugin"

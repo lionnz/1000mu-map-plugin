@@ -1,6 +1,6 @@
 import bpy
 
-from ..constants import ADDON_MODULE, BUILTIN_HEIGHT_PRESETS
+from ..constants import ADDON_MODULE, BUILTIN_HEIGHT_PRESETS, BUILTIN_PRESETS_HASH
 
 class MAP_OT_add_preset(bpy.types.Operator):
     bl_idname = "map.add_preset"
@@ -40,6 +40,7 @@ class MAP_OT_reset_presets(bpy.types.Operator):
             item = prefs.height_presets.add()
             item.keyword = kw
             item.height = h
+        prefs.presets_hash = BUILTIN_PRESETS_HASH
         prefs.active_preset_idx = 0
         self.report({'INFO'}, f"已恢复 {len(BUILTIN_HEIGHT_PRESETS)} 条内置默认预设")
         return {'FINISHED'}
