@@ -76,12 +76,18 @@ class MAP_OT_import_svg(bpy.types.Operator):
                     decoded = decode_figma_id(raw_id)
                     if decoded and decoded.lower() not in INVALID_LAYER_NAMES: element.set('id', decoded)
             else:
-                if raw_id:
+                if raw_id and current_target_id is None:
                     decoded = decode_figma_id(raw_id)
                     if decoded and decoded.lower() not in INVALID_LAYER_NAMES: current_target_id = decoded
             for child in element: apply_target_id(child, current_target_id)
 
-        apply_target_id(root, None)
+        root_g = [c for c in root if c.tag.split('}')[-1] == 'g']
+        if len(root_g) == 1:
+            for child in root_g[0]:
+                apply_target_id(child, None)
+        else:
+            for child in root:
+                apply_target_id(child, None)
         tree.write(temp_svg,encoding='utf-8',xml_declaration=True)
 
         # 解析 SVG 颜色并存储到场景（供 refresh_layer_list 使用）
