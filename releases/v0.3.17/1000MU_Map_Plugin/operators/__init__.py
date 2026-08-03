@@ -3,6 +3,7 @@ from .pipeline import (
     MAP_OT_import_svg,
     MAP_OT_generate_3d,
     MAP_OT_export_glb,
+    MAP_OT_export_restore_warning,
     MAP_OT_refresh_layer_list,
 )
 from .presets import (
@@ -32,6 +33,7 @@ classes = (
     MAP_OT_import_svg,
     MAP_OT_generate_3d,
     MAP_OT_export_glb,
+    MAP_OT_export_restore_warning,
     MAP_OT_refresh_layer_list,
     # 预设管理
     MAP_OT_add_preset,

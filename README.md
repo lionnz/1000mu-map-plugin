@@ -11,7 +11,7 @@
 - **SVG 智能导入**：自动解码 Figma 中文层名，物理尺度映射，全局居中，导入即有材质
 - **导入网格优化**：几何节点填充曲线（N-gons 模式）替代传统 2D 填充，从源头避免0面积面
 - **语义化挤出**：按图层关键词匹配默认高度，支持随机高度错落
-- **网格平面优化**：0面积面检查 + 重新拓扑（bmesh 提取轮廓线 + 几何节点填充）+ 曲线物体网格优化
+- **网格平面优化**：0面积面检查 + 重新拓扑（bmesh 提取轮廓线 + 几何节点填充）
 - **色块贴图优化**：按材质聚合色彩，自动分流不透明/透明材质
 - **单物体多材质球支持**：按面写入 UV，无需分离物体，零顶点增量
 - **冗余槽自动合并**：打包后无重复材质槽，GLB 材质列表精简
@@ -23,14 +23,14 @@
 
 ### 首次安装
 
-1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_v0317.zip`
+1. 下载 [最新 Release](https://github.com/lionnz/1000mu-map-plugin/releases/latest) 中的 `1000MU_Map_Plugin_v0318.zip`
 2. Blender → 编辑 → 偏好设置 → 插件 → 从磁盘安装
 3. 选择 `.zip` 文件，勾选启用
 4. 按 `N` 键打开侧边栏，点击 `1000Map` 标签
 
 ### 从旧版升级
 
-**从 v0.3.16 升级**：偏好设置 → 插件，Remove 旧版，再从磁盘安装新版。
+**从 v0.3.16 及以上升级**：偏好设置 → 插件，Remove 旧版，再从磁盘安装新版。
 
 **从 v0.3.13 及更早升级**：旧版是单 `.py` 文件，v0.3.14 起改为 `.zip` 包，必须彻底清除旧版残留：
 
@@ -42,17 +42,18 @@
 3. 重新打开 Blender，检查偏好设置 → 插件列表，确认没有残留的 1000MU 条目（如有则点 Remove 清理）
 4. 再按上方「首次安装」步骤安装新版
 
-> 详细使用说明见 [技术说明书](docs/技术说明书_v0.3.17.md)
+> 详细使用说明见 [技术说明书](docs/技术说明书_v0.3.18.md)
 
 ## 版本下载
 
 | 版本 | 文件 | 说明 |
 |---|---|---|
-| v0.3.17 | [1000MU_Map_Plugin_v0317.zip](releases/v0.3.17/) | 面板布局调整、新增曲线网格优化、修复清理提示BUG（最新） |
-| v0.3.16 | [1000MU_Map_Plugin_v0316.zip](releases/v0.3.16/) | 重新拓扑前置优化、0面积面移动至集合、视图裁剪×1000预设 |
-| v0.3.15 | [1000MU_Map_Plugin_v0315.zip](releases/v0.3.15/) | 模块化拆分、导入即有材质、新增实用小工具箱 |
-| v0.3.14 | [1000MU_Map_Plugin_v0314.zip](releases/v0.3.14/) | 内置拼音引擎，开箱即用 |
-| v0.3.8 | [1000MU_Map_Plugin_v038.py](releases/v0.3.8/) | 用户 AI coding 初版（归档参考） |
+| v0.3.18 | [1000MU_Map_Plugin_v0318.zip](releases/v0.3.18/1000MU_Map_Plugin_v0318.zip) | 修复法向清理进度条/防重入/SVG临时文件泄漏/拼音还原，代码规范化（最新） |
+| v0.3.17 | [1000MU_Map_Plugin_v0317.zip](releases/v0.3.17/1000MU_Map_Plugin_v0317.zip) | 面板布局调整、内置高度预设优化、修复清理提示BUG |
+| v0.3.16 | [1000MU_Map_Plugin_v0316.zip](releases/v0.3.16/1000MU_Map_Plugin_v0316.zip) | 重新拓扑前置优化、0面积面移动至集合、视图裁剪×1000预设 |
+| v0.3.15 | [1000MU_Map_Plugin_v0315.zip](releases/v0.3.15/1000MU_Map_Plugin_v0315.zip) | 模块化拆分、导入即有材质、新增实用小工具箱 |
+| v0.3.14 | [1000MU_Map_Plugin_v0314.zip](releases/v0.3.14/1000MU_Map_Plugin_v0314.zip) | 内置拼音引擎，开箱即用 |
+| v0.3.8 | [1000MU_Map_Plugin_v038.py](releases/v0.3.8/1000MU_Map_Plugin_v038.py) | 用户 AI coding 初版（归档参考） |
 
 ## 适用环境
 
@@ -61,7 +62,7 @@
 
 ## 文档
 
-- [技术说明书 v0.3.17](docs/技术说明书_v0.3.17.md) — 完整操作手册与技术说明
+- [技术说明书 v0.3.18](docs/技术说明书_v0.3.18.md) — 完整操作手册与技术说明
 - [svg-to-glb-pipeline.md](docs/svg-to-glb-pipeline.md) — AI 自动化导出流程（含后台脚本模板）
 - [blender-plugin-debug-guide.md](docs/blender-plugin-debug-guide.md) — Blender 插件 BUG 调试经验
 - [变更日志](CHANGELOG.md) — 全版本变更记录
@@ -89,4 +90,4 @@ Figma 导出 SVG
 
 ## 反馈
 
-如有功能建议或异常反馈，请在团队技术支持频道提交，或通过 Issue 提交。
+如有功能建议或异常反馈，请通过 [GitHub Issue](https://github.com/lionnz/1000mu-map-plugin/issues) 提交。

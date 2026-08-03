@@ -4,7 +4,7 @@ bl_info = {
     "version": (0, 3, 17),
     "blender": (4, 2, 0),
     "location": "View3D > N Panel > 1000Map",
-    "description": "v0.3.17: 面板布局调整、新增曲线物体网格优化、修复清理提示红叉BUG。兼容 Blender 4.2-4.5。",
+    "description": "v0.3.17: 面板布局调整、内置高度预设优化、修复清理提示红叉BUG。兼容 Blender 4.2-4.5。",
     "category": "3D View",
 }
 

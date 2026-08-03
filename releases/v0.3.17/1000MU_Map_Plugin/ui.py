@@ -1,7 +1,7 @@
 import bpy
 
 class MAP_UL_layer_list(bpy.types.UIList):
-    def draw_item(self,context,layout,data,item,icon,active_data,active_propname,index):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         split = layout.split(factor=0.10)
         split.prop(item, 'color', text='')
         right = split.row(align=True)
@@ -22,29 +22,32 @@ class MAP_UL_prefs_presets(bpy.types.UIList):
         row.prop(item, 'height', text='')
 
 class MAP_PT_main_panel(bpy.types.Panel):
-    bl_label="1000MU 3D MAP 插件"
-    bl_idname="MAP_PT_main_panel"
-    bl_space_type='VIEW_3D'
-    bl_region_type='UI'
-    bl_category='1000Map'
-    def draw(self,context):
-        props=context.scene.map_props; layout=self.layout
-        row=layout.row(align=True)
-        for idx,text in enumerate(['导入','挤出','导出']):
-            op=row.operator('map.switch_tab',text=text,depress=(props.active_tab==idx)); op.tab_index=idx
+    bl_label = "1000MU 3D MAP 插件"
+    bl_idname = "MAP_PT_main_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = '1000Map'
+
+    def draw(self, context):
+        props = context.scene.map_props
+        layout = self.layout
+        row = layout.row(align=True)
+        for idx, text in enumerate(['导入', '挤出', '导出']):
+            op = row.operator('map.switch_tab', text=text, depress=(props.active_tab == idx))
+            op.tab_index = idx
         layout.separator()
 
-        if props.active_tab==0:
+        if props.active_tab == 0:
             # 视图设置 + 场景清理（合并为一个板块）
             box = layout.box()
             box.label(text="视图设置", icon='VIEW3D')
             row = box.row(align=True)
             current_clip = props.clip_preset
-            for preset_id, label in [('DEFAULT','默认'), ('FAR_X10','远点×10'), ('X10','×10')]:
+            for preset_id, label in [('DEFAULT', '默认'), ('FAR_X10', '远点×10'), ('X10', '×10')]:
                 op = row.operator("map.set_clip", text=label, depress=(current_clip == preset_id))
                 op.preset = preset_id
             row = box.row(align=True)
-            for preset_id, label in [('FAR_X100','远点×100'), ('X100','×100'), ('X1000','×1000')]:
+            for preset_id, label in [('FAR_X100', '远点×100'), ('X100', '×100'), ('X1000', '×1000')]:
                 op = row.operator("map.set_clip", text=label, depress=(current_clip == preset_id))
                 op.preset = preset_id
             # 着色方式
@@ -61,15 +64,15 @@ class MAP_PT_main_panel(bpy.types.Panel):
 
             layout.separator()
 
-            layout.prop(props,'svg_filepath',text='SVG文件')
+            layout.prop(props, 'svg_filepath', text='SVG文件')
 
             layout.separator()
 
-            layout.label(text='比例换算',icon='CON_SIZELIKE')
+            layout.label(text='比例换算', icon='CON_SIZELIKE')
             row = layout.row(align=True)
             left = row.row(align=True)
             left.scale_x = 4.2
-            left.prop(props,'ratio_px',text='')
+            left.prop(props, 'ratio_px', text='')
             unit_l = row.row(align=True)
             unit_l.scale_x = 0.5
             unit_l.label(text='px')
@@ -79,18 +82,20 @@ class MAP_PT_main_panel(bpy.types.Panel):
             center.label(text='=')
             right = row.row(align=True)
             right.scale_x = 4.2
-            right.prop(props,'ratio_m',text='')
+            right.prop(props, 'ratio_m', text='')
             unit_r = row.row(align=True)
             unit_r.scale_x = 0.3
             unit_r.label(text='m')
 
-            layout.prop(props,'curve_res',slider=True)
+            layout.prop(props, 'curve_res', slider=True)
 
             layout.separator()
 
-            btn_row=layout.row(); btn_row.scale_y=1.2; btn_row.operator('map.import_svg',icon='LIGHT_SUN')
+            btn_row = layout.row()
+            btn_row.scale_y = 1.2
+            btn_row.operator('map.import_svg', icon='LIGHT_SUN')
 
-        elif props.active_tab==1:
+        elif props.active_tab == 1:
             box = layout.box()
             box.label(text="网格平面优化", icon='MESH_DATA')
             row = box.row(align=True)
@@ -103,14 +108,19 @@ class MAP_PT_main_panel(bpy.types.Panel):
             row = layout.row(align=True)
             row.operator("map.refresh_layer_list", text="刷新图层列表（从选中物体）", icon='FILE_REFRESH')
 
-            if len(props.layer_list)==0: layout.label(text='请先在「导入」标签页导入SVG',icon='INFO')
+            if len(props.layer_list) == 0:
+                layout.label(text='请先在「导入」标签页导入SVG', icon='INFO')
             else:
-                box=layout.box(); box.label(text=f'图层配置 ({len(props.layer_list)}个)',icon='MOD_BUILD')
-                row=box.row(); row.template_list('MAP_UL_layer_list','',props,'layer_list',props,'layer_list_idx',rows=max(5, min(len(props.layer_list), 10)))
+                box = layout.box()
+                box.label(text=f'图层配置 ({len(props.layer_list)}个)', icon='MOD_BUILD')
+                row = box.row()
+                row.template_list('MAP_UL_layer_list', '', props, 'layer_list', props, 'layer_list_idx', rows=max(5, min(len(props.layer_list), 10)))
                 layout.separator()
-                gen_row=layout.row(); gen_row.scale_y=1.6; gen_row.operator('map.generate_3d',icon='PLAY',text='一键挤出')
+                gen_row = layout.row()
+                gen_row.scale_y = 1.6
+                gen_row.operator('map.generate_3d', icon='PLAY', text='一键挤出')
 
-        elif props.active_tab==2:
+        elif props.active_tab == 2:
             box = layout.box()
             box.label(text="实用小工具", icon='TOOL_SETTINGS')
             box.operator("map.purge_scene", text="从该文件中清理未使用的数据", icon='BRUSH_DATA')
@@ -119,14 +129,24 @@ class MAP_PT_main_panel(bpy.types.Panel):
             box.operator("map.set_origin_to_face", text="编辑模式下、根据批量选择的面对所选网格进行批量设置原点", icon='ORIENTATION_CURSOR')
             box.operator("map.build_atlas", text="材质球打包、生成色块贴图", icon='IMAGE_DATA')
 
-            if hasattr(context.scene, 'batch_clear_progress') and context.scene.batch_clear_progress > 0:
-                box.progress(factor=context.scene.batch_clear_progress, text="法向清理中...")
+            # 进度条仅在清理进行中显示（0~1之间），结束后隐藏，避免永久停留 100%
+            if hasattr(context.scene, 'batch_clear_progress'):
+                progress = context.scene.batch_clear_progress
+                if 0.0 <= progress < 1.0:
+                    box.progress(factor=progress, text="法向清理中...")
+            # 清理结束后展示结果明细（成功/失败/跳过），直到下次清理或加载文件
+            report = getattr(context.scene, 'batch_clear_report', "")
+            if report:
+                for line in report.split('\n'):
+                    box.label(text=line)
 
             layout.separator()
 
             box = layout.box()
             box.label(text='导出交付', icon='EXPORT')
-            box.prop(props,'exp_visible_only', text="仅导出可见")
-            box.prop(props,'exp_apply_modifiers', text="应用修改器")
-            box.prop(props,'exp_pinyin_safe', text="导出时静默中文转拼音，防前端报错")
-            exp_row=box.row(); exp_row.scale_y=1.5; exp_row.operator('map.export_glb',icon='PACKAGE')
+            box.prop(props, 'exp_visible_only', text="仅导出可见")
+            box.prop(props, 'exp_apply_modifiers', text="应用修改器")
+            box.prop(props, 'exp_pinyin_safe', text="导出时静默中文转拼音，防前端报错")
+            exp_row = box.row()
+            exp_row.scale_y = 1.5
+            exp_row.operator('map.export_glb', icon='PACKAGE')

@@ -4,6 +4,32 @@
 
 ---
 
+## [v0.3.18] - 2026-08-03
+
+### BUG 修复
+- **修复法向清理进度条永久停留 100%**：`finish()` 后重置 `batch_clear_progress` 为 `-1.0`，进度条仅在进行中显示（0~1 之间），结束后自动隐藏
+- **修复法向清理结果报告为"死数据"**：`batch_clear_report`（成功/失败/跳过明细）此前写入后从未在 UI 中展示，现已在导出页面板中显示完整结果
+- **修复法向清理防重入守卫失效**：原 `hasattr(self, '_timer')` 检查基于实例属性，但 operator 每次点击都是新实例，守卫形同虚设。改用类属性 `_running` 跨调用标记，重复点击时提示"请等待完成（可按 ESC 取消）"
+- **修复法向清理 modal 中未捕获异常**：`obj.data.has_custom_normals` 在 `try` 之外，若清理过程中物体被删除会抛 `ReferenceError` 导致 modal 崩溃且计时器无法移除。已将对象访问整体移入 `try`，并新增 `cancel()` 方法支持 ESC 中断
+- **修复导入 SVG 临时文件泄漏**：`tree.write()` 或 `bpy.ops.import_curve.svg()` 抛异常时临时文件永久残留。已用 `try/finally` 包裹，任何异常路径都清理
+- **修复拼音防呆还原名静默失败**：还原后逐一校验名称（检测 Blender 自动追加 `.001`），失败汇总后通过新增 `map.export_restore_warning` 弹窗告知用户，不再仅写控制台
+
+### 代码质量
+- **PEP 8 规范化**：`utils.py`、`pipeline.py`、`repair_tools.py`、`ui.py` 中一行多导入拆分为单行；分号连写多语句拆为独立行（约 40 处）
+- **列表推导副作用改为 for 循环**：`pipeline.py` 中 `[o.select_set(True) for o in meshes]` 改为普通循环
+- **md5 改为 sha256**：`constants.py` 预设指纹和 `utils.py` 防重名哈希均从 md5 升级为 sha256
+- **3543.0 魔法数字补注释**：说明 90 DPI 换算推导（1px ≈ 1/3543m）
+- **预设条数描述动态化**：`presets.py` 中"10 条默认预设"改为 `len(BUILTIN_HEIGHT_PRESETS)` 动态取值（当前 11 条）
+
+### 文档修复
+- **修复 v0.3.17 功能矛盾描述**：bl_info、README、技术说明书中"新增曲线网格优化"字样全部删除（该功能在 v0.3.17 已移除）
+- **修复 README 下载链接指向目录**：5 行链接全部改为指向具体 zip/py 文件
+- **历史说明书归档**：v0.3.8/v0.3.14/v0.3.16 说明书移入 `docs/archive/`，根目录只留最新版
+- **消除 releases 双份维护**：删除 `releases/v0.3.17/` 内重复的 CHANGELOG 和技术说明书
+- **小项**：说明书表格后补空行分隔；README 反馈渠道改为 GitHub Issue
+
+---
+
 ## [v0.3.17] - 2026-07-15
 
 ### 面板布局调整

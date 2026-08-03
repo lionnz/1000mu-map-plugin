@@ -16,6 +16,6 @@ BUILTIN_HEIGHT_PRESETS = [
     ("水", 5.0),
 ]
 
-BUILTIN_PRESETS_HASH = hashlib.md5(str(BUILTIN_HEIGHT_PRESETS).encode()).hexdigest()
+BUILTIN_PRESETS_HASH = hashlib.sha256(str(BUILTIN_HEIGHT_PRESETS).encode()).hexdigest()
 
 ADDON_MODULE = "1000MU_Map_Plugin"

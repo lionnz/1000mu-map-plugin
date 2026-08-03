@@ -1,15 +1,24 @@
-import bpy, bmesh, random, os, re, tempfile, xml.etree.ElementTree as ET
+import bpy
+import bmesh
+import random
+import os
+import re
+import tempfile
+import xml.etree.ElementTree as ET
 import math
 
 from ..constants import INVALID_LAYER_NAMES, ADDON_MODULE
 from ..utils import decode_figma_id, get_base_name, parse_svg_colors, force_normals_up, get_height_presets, chinese_to_safe_name, MAX_SVG_SIZE
 
 class MAP_OT_switch_tab(bpy.types.Operator):
-    bl_idname = "map.switch_tab"; bl_label = "切换标签"
+    bl_idname = "map.switch_tab"
+    bl_label = "切换标签"
     bl_description = "切换插件的功能标签页"
     bl_options = {'REGISTER', 'UNDO'}
     tab_index: bpy.props.IntProperty(default=0)
-    def execute(self,context): context.scene.map_props.active_tab = self.tab_index; return {'FINISHED'}
+    def execute(self, context):
+        context.scene.map_props.active_tab = self.tab_index
+        return {'FINISHED'}
 
 class MAP_OT_import_svg(bpy.types.Operator):
     bl_idname = "map.import_svg"
@@ -21,7 +30,8 @@ class MAP_OT_import_svg(bpy.types.Operator):
         props = context.scene.map_props
         input_file = bpy.path.abspath(props.svg_filepath)
         if not os.path.exists(input_file) or not input_file.lower().endswith('.svg'):
-            self.report({'ERROR'}, "请选择有效的SVG文件！"); return {'CANCELLED'}
+            self.report({'ERROR'}, "请选择有效的SVG文件！")
+            return {'CANCELLED'}
 
         # 安全：检查 SVG 文件大小，防止 XML 实体扩展攻击（Billion Laughs）导致内存耗尽
         try:
@@ -38,7 +48,8 @@ class MAP_OT_import_svg(bpy.types.Operator):
         temp_svg_file.close()  # 关闭句柄，稍后通过路径写入（Blender 的 ET.write 需要路径）
         ET.register_namespace('',"http://www.w3.org/2000/svg")
         try:
-            tree = ET.parse(input_file); root = tree.getroot()
+            tree = ET.parse(input_file)
+            root = tree.getroot()
         except (ET.ParseError, OSError) as e:
             self.report({'ERROR'}, f"SVG 解析失败: {e}")
             if os.path.exists(temp_svg): os.remove(temp_svg)
@@ -88,27 +99,36 @@ class MAP_OT_import_svg(bpy.types.Operator):
         else:
             for child in root:
                 apply_target_id(child, None)
-        tree.write(temp_svg,encoding='utf-8',xml_declaration=True)
+        # 安全：try/finally 保证无论写入或导入是否抛异常，临时文件都会被清理
+        try:
+            tree.write(temp_svg, encoding='utf-8', xml_declaration=True)
 
-        # 解析 SVG 颜色并存储到场景（供 refresh_layer_list 使用）
-        svg_colors = parse_svg_colors(input_file)
-        context.scene['map_svg_colors'] = {k: list(v) for k, v in svg_colors.items()}
+            # 解析 SVG 颜色并存储到场景（供 refresh_layer_list 使用）
+            svg_colors = parse_svg_colors(input_file)
+            context.scene['map_svg_colors'] = {k: list(v) for k, v in svg_colors.items()}
 
-        existing_objs = set(context.scene.objects)
-        bpy.ops.import_curve.svg(filepath=temp_svg)
-        if os.path.exists(temp_svg): os.remove(temp_svg)
-        new_objs = set(context.scene.objects)-existing_objs
-        curves = [o for o in new_objs if o.type=='CURVE']
-        if not curves: self.report({'WARNING'},"未检测到有效曲线！"); return {'CANCELLED'}
+            existing_objs = set(context.scene.objects)
+            bpy.ops.import_curve.svg(filepath=temp_svg)
+        finally:
+            if os.path.exists(temp_svg):
+                os.remove(temp_svg)
+        new_objs = set(context.scene.objects) - existing_objs
+        curves = [o for o in new_objs if o.type == 'CURVE']
+        if not curves:
+            self.report({'WARNING'}, "未检测到有效曲线！")
+            return {'CANCELLED'}
 
-        scale_factor = 3543.0*(props.ratio_m/props.ratio_px)
+        # 比例换算：Blender SVG 导入器按 90 DPI 解释 px 单位，即 1px ≈ 1/3543 m，
+        # 故固定乘数为 3543.0，再乘以 (ratio_m / ratio_px) 换算到物理尺寸（默认 10px=1m 时乘数为 354.3）
+        scale_factor = 3543.0 * (props.ratio_m / props.ratio_px)
         offset_x, offset_y = -(svg_w*props.ratio_m/props.ratio_px)/2, -(svg_h*props.ratio_m/props.ratio_px)/2
 
         bpy.ops.object.select_all(action='DESELECT')
         for obj in curves:
             obj.select_set(True)
             obj.data.resolution_u = props.curve_res
-            obj.data.dimensions='2D'; obj.data.fill_mode='BOTH'
+            obj.data.dimensions = '2D'
+            obj.data.fill_mode = 'BOTH'
             obj.scale=(scale_factor,scale_factor,scale_factor)
 
         context.view_layer.objects.active = curves[0]
@@ -122,7 +142,8 @@ class MAP_OT_import_svg(bpy.types.Operator):
                 ng = bpy.data.node_groups.new('FillCurve_NGons', type='GeometryNodeTree')
                 ng.interface.new_socket(name='Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
                 ng.interface.new_socket(name='Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
-                nodes = ng.nodes; links = ng.links
+                nodes = ng.nodes
+                links = ng.links
                 input_node = nodes.new('NodeGroupInput')
                 output_node = nodes.new('NodeGroupOutput')
                 fill_node = nodes.new('GeometryNodeFillCurve')
@@ -195,12 +216,16 @@ class MAP_OT_import_svg(bpy.types.Operator):
             color = svg_colors.get(base, (0.8, 0.8, 0.8, 1.0))
             matname = f"Mat_{base}"
             if matname not in bpy.data.materials:
-                mat = bpy.data.materials.new(name=matname); mat.use_nodes = True
-                nodes = mat.node_tree.nodes; links = mat.node_tree.links
-                for n in nodes: nodes.remove(n)
+                mat = bpy.data.materials.new(name=matname)
+                mat.use_nodes = True
+                nodes = mat.node_tree.nodes
+                links = mat.node_tree.links
+                for n in nodes:
+                    nodes.remove(n)
                 bsdf = nodes.new('ShaderNodeBsdfPrincipled')
                 output = nodes.new('ShaderNodeOutputMaterial')
-                bsdf.location = (0, 300); output.location = (300, 300)
+                bsdf.location = (0, 300)
+                output.location = (300, 300)
                 links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
             else:
                 mat = bpy.data.materials[matname]
@@ -214,11 +239,17 @@ class MAP_OT_import_svg(bpy.types.Operator):
                 if hasattr(mat, 'shadow_method'):
                     mat.shadow_method = 'NONE'
             mat.diffuse_color = color
-            obj.data.materials.clear(); obj.data.materials.append(mat)
+            obj.data.materials.clear()
+            obj.data.materials.append(mat)
 
-        for obj in meshes: obj.location.x+=offset_x; obj.location.y+=offset_y
-        bpy.ops.object.select_all(action='DESELECT'); [o.select_set(True) for o in meshes]; context.view_layer.objects.active=meshes[0]
-        bpy.ops.object.transform_apply(location=True,rotation=True,scale=False)
+        for obj in meshes:
+            obj.location.x += offset_x
+            obj.location.y += offset_y
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in meshes:
+            o.select_set(True)
+        context.view_layer.objects.active = meshes[0]
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=False)
 
         self.report({'INFO'}, "导入成功！请选中导入的网格物体，到「挤出」标签页点击「刷新图层列表」")
         return {'FINISHED'}
@@ -256,7 +287,8 @@ class MAP_OT_refresh_layer_list(bpy.types.Operator):
             for kw, h in get_height_presets(context):
                 if kw and kw in base:
                     item.height = h
-                    matched = True; break
+                    matched = True
+                    break
             if not matched: item.height = float(random.randint(1, 10))
 
             # 从 SVG 颜色字典中查找，找不到则用默认灰色
@@ -277,7 +309,9 @@ class MAP_OT_generate_3d(bpy.types.Operator):
 
     def execute(self, context):
         props = context.scene.map_props
-        if len(props.layer_list) == 0: self.report({'ERROR'}, "请先导入SVG！"); return {'CANCELLED'}
+        if len(props.layer_list) == 0:
+            self.report({'ERROR'}, "请先导入SVG！")
+            return {'CANCELLED'}
 
         layer_config = {
             i.layer_name: {
@@ -301,7 +335,9 @@ class MAP_OT_generate_3d(bpy.types.Operator):
         for obj in context.selected_objects:
             if obj.type != 'MESH': continue
             if not is_map_obj(obj): continue
-            obj.modifiers.clear(); height = 0; color = (0.8, 0.8, 0.8, 1.0)
+            obj.modifiers.clear()
+            height = 0
+            color = (0.8, 0.8, 0.8, 1.0)
             obj_base = get_base_name(obj.name)
 
             for lname, conf in layer_config.items():
@@ -317,18 +353,25 @@ class MAP_OT_generate_3d(bpy.types.Operator):
             if height <= 0: height = float(random.randint(1, 10))
             force_normals_up(obj)
 
-            m = obj.modifiers.new(name='Extrude', type='SOLIDIFY'); m.thickness = height; m.offset = 1.0
+            m = obj.modifiers.new(name='Extrude', type='SOLIDIFY')
+            m.thickness = height
+            m.offset = 1.0
 
-            obj.modifiers.new(name='Weld', type='WELD'); obj.modifiers.new(name='Triangulate', type='TRIANGULATE')
+            obj.modifiers.new(name='Weld', type='WELD')
+            obj.modifiers.new(name='Triangulate', type='TRIANGULATE')
 
             matname = f"Mat_{get_base_name(obj.name)}"
             if matname not in bpy.data.materials:
-                mat = bpy.data.materials.new(name=matname); mat.use_nodes = True
-                nodes = mat.node_tree.nodes; links = mat.node_tree.links
-                for n in nodes: nodes.remove(n)
+                mat = bpy.data.materials.new(name=matname)
+                mat.use_nodes = True
+                nodes = mat.node_tree.nodes
+                links = mat.node_tree.links
+                for n in nodes:
+                    nodes.remove(n)
                 bsdf = nodes.new('ShaderNodeBsdfPrincipled')
                 output = nodes.new('ShaderNodeOutputMaterial')
-                bsdf.location = (0, 300); output.location = (300, 300)
+                bsdf.location = (0, 300)
+                output.location = (300, 300)
                 links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
             else:
                 mat = bpy.data.materials[matname]
@@ -344,7 +387,8 @@ class MAP_OT_generate_3d(bpy.types.Operator):
                     mat.shadow_method = 'NONE'
             mat.diffuse_color = color
 
-            obj.data.materials.clear(); obj.data.materials.append(mat)
+            obj.data.materials.clear()
+            obj.data.materials.append(mat)
             count += 1
 
         map_objs = [o for o in context.selected_objects if o.type == 'MESH' and is_map_obj(o)]
@@ -453,18 +497,39 @@ class MAP_OT_export_glb(bpy.types.Operator):
 
         # 阶段2：弹窗已关闭且已等待2秒，现在还原原名
         obj_restore, mat_restore = queue.pop(0)
+        failed = []
         for o, (obj_name, data_name) in obj_restore.items():
             try:
                 o.name = obj_name
+                # 若同名物体已存在，Blender 会自动追加 .001 后缀，导致原名永久丢失，需检测
+                if o.name != obj_name:
+                    failed.append(f"物体「{obj_name}」名字被占用，现为「{o.name}」")
                 if o.data and data_name:
                     o.data.name = data_name
             except (ReferenceError, RuntimeError) as e:
+                failed.append(f"物体「{obj_name}」还原失败（对象已失效）")
                 print(f"[1000Map] 恢复物体名失败: {e}")
         for mat, orig_name in mat_restore.items():
             try:
                 mat.name = orig_name
+                if mat.name != orig_name:
+                    failed.append(f"材质「{orig_name}」名字被占用，现为「{mat.name}」")
             except (ReferenceError, RuntimeError) as e:
+                failed.append(f"材质「{orig_name}」还原失败（对象已失效）")
                 print(f"[1000Map] 恢复材质名失败: {e}")
+
+        # 有失败时除控制台输出外，再弹窗提醒用户，避免原名静默丢失
+        if failed:
+            summary = '\n'.join(failed[:20])
+            print(f"[1000Map] 拼音防呆还原异常（{len(failed)} 项）:\n{summary}")
+
+            def _show_warning():
+                try:
+                    bpy.ops.map.export_restore_warning('INVOKE_DEFAULT', names=summary)
+                except (RuntimeError, TypeError) as e:
+                    print(f"[1000Map] 还原警告弹窗失败: {e}")
+                return None
+            bpy.app.timers.register(_show_warning, first_interval=0.1)
 
         # 队列还有数据则继续处理，否则停止
         if MAP_OT_export_glb._restore_queue:
@@ -472,3 +537,25 @@ class MAP_OT_export_glb(bpy.types.Operator):
             return 1.0
         MAP_OT_export_glb._restore_queue = None
         return None
+
+class MAP_OT_export_restore_warning(bpy.types.Operator):
+    """拼音防呆还原失败时的弹窗提醒（由计时器延迟调用，避免在计时器回调中直接操作 UI）"""
+    bl_idname = "map.export_restore_warning"
+    bl_label = "导出还原警告"
+    bl_description = "提示拼音防呆导出后部分原名未能还原"
+    bl_options = {'INTERNAL'}
+
+    names: bpy.props.StringProperty(default="")
+
+    def invoke(self, context, event):
+        lines = self.names.split('\n') if self.names else []
+
+        def draw(menu, context):
+            for line in lines:
+                menu.layout.label(text=line)
+
+        context.window_manager.popup_menu(draw, title="部分原名未能还原（详见控制台）", icon='ERROR')
+        return {'FINISHED'}
+
+    def execute(self, context):
+        return {'FINISHED'}

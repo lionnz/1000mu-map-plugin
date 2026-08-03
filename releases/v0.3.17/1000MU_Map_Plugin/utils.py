@@ -1,5 +1,10 @@
-import re, hashlib, urllib.parse, os, xml.etree.ElementTree as ET
-import bpy, bmesh
+import re
+import hashlib
+import urllib.parse
+import os
+import xml.etree.ElementTree as ET
+import bpy
+import bmesh
 
 from .constants import INVALID_LAYER_NAMES, BUILTIN_HEIGHT_PRESETS, ADDON_MODULE
 
@@ -30,7 +35,7 @@ def chinese_to_safe_name(s):
     fallback = re.sub(r'[^a-zA-Z0-9_]', '', s)
     if fallback:
         return fallback
-    return 'layer_' + hashlib.md5(s.encode('utf-8')).hexdigest()[:8]
+    return 'layer_' + hashlib.sha256(s.encode('utf-8')).hexdigest()[:8]
 
 def decode_figma_id(raw_id):
     if not raw_id: return ""
@@ -57,7 +62,9 @@ def parse_svg_colors(svg_path):
     except OSError as e:
         print(f"[1000Map] SVG 文件大小检查失败: {e}")
         return colors
-    try: tree = ET.parse(svg_path); root = tree.getroot()
+    try:
+        tree = ET.parse(svg_path)
+        root = tree.getroot()
     except (ET.ParseError, OSError) as e:
         print(f"[1000Map] SVG 解析失败: {e}")
         return colors
@@ -75,8 +82,9 @@ def parse_svg_colors(svg_path):
         return (r, g, b, float(a))
 
     def extract_fill_and_alpha(element):
-        style = element.get('style','')
-        fill = None; alpha = 1.0
+        style = element.get('style', '')
+        fill = None
+        alpha = 1.0
         m_fill = re.search(r'(?:^|;)\s*fill\s*:\s*(#[0-9a-fA-F]{3,6})', style)
         if m_fill: fill = m_fill.group(1)
         else:

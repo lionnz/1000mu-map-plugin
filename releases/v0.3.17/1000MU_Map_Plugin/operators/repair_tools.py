@@ -77,6 +77,7 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     _timer = None
+    _running = False  # 类属性防重入标记（operator 每次点击都是新实例，必须用类属性跨调用生效）
     _objects = []
     _total = 0
     _index = 0
@@ -93,15 +94,22 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
         return context.selected_objects and len(context.selected_objects) > 0
 
     def modal(self, context, event):
+        if event.type == 'ESC':
+            self.cancel(context)
+            return {'CANCELLED'}
+
         if event.type == 'TIMER':
             batch_end = min(self._index + self._batch_size, self._total)
             for i in range(self._index, batch_end):
                 obj = self._objects[i]
-                if not obj.data.has_custom_normals:
-                    self._no_data += 1
-                    continue
-                context.view_layer.objects.active = obj
                 try:
+                    # 物体可能在清理过程中被用户删除（ReferenceError），
+                    # 或对象模式被外部打断导致 bpy.ops 失败（RuntimeError），
+                    # 必须整体兜住，否则异常会在每个 TIMER 事件上重复抛出且计时器无法移除
+                    if not obj.data.has_custom_normals:
+                        self._no_data += 1
+                        continue
+                    context.view_layer.objects.active = obj
                     bpy.ops.mesh.customdata_custom_splitnormals_clear()
                     self._success += 1
                 except Exception:
@@ -125,9 +133,13 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
     def finish(self, context):
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
+        self._timer = None
 
         for obj in self._selected_objs:
-            obj.select_set(True)
+            try:
+                obj.select_set(True)
+            except (ReferenceError, RuntimeError):
+                pass
         if self._original_active and self._original_active in self._selected_objs:
             context.view_layer.objects.active = self._original_active
         elif self._objects:
@@ -141,7 +153,9 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
             f"📦 总选中物体数: {len(self._selected_objs)}"
         )
         context.scene.batch_clear_report = report
-        context.scene.batch_clear_progress = 1.0
+        # 结束后重置为 -1.0 隐藏进度条，避免面板上永久停留 100%；
+        # 结果明细通过 batch_clear_report 展示，下次启动清理或加载文件时清空
+        context.scene.batch_clear_progress = -1.0
 
         if self._success == 0 and self._no_data > 0:
             self.report({'INFO'}, f"共检查 {self._no_data} 个网格，全部无自定义法向，无需清理")
@@ -151,12 +165,35 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
 
         self._objects = []
         self._selected_objs = []
+        MAP_OT_clear_split_normals._running = False
+
+    def cancel(self, context):
+        """ESC 取消：移除计时器、重置进度与状态标记，防止状态泄漏"""
+        if self._timer is not None:
+            context.window_manager.event_timer_remove(self._timer)
+            self._timer = None
+
+        for obj in self._selected_objs:
+            try:
+                obj.select_set(True)
+            except (ReferenceError, RuntimeError):
+                pass
+
+        context.scene.batch_clear_progress = -1.0
+        context.scene.batch_clear_report = ""
+        self.report({'INFO'}, f"已取消：已处理 {self._index}/{self._total} 个物体")
+
+        self._objects = []
+        self._selected_objs = []
+        MAP_OT_clear_split_normals._running = False
 
     def execute(self, context):
         return self.invoke(context, None)
 
     def invoke(self, context, event):
-        if hasattr(self, '_timer') and self._timer is not None:
+        # 防重入：operator 每次点击都是新实例，实例属性无法跨调用生效，必须用类属性标记
+        if MAP_OT_clear_split_normals._running:
+            self.report({'WARNING'}, "法向清理正在进行中，请等待完成（可按 ESC 取消）")
             return {'CANCELLED'}
 
         if context.mode != 'OBJECT':
@@ -187,6 +224,7 @@ class MAP_OT_clear_split_normals(bpy.types.Operator):
         context.scene.batch_clear_progress = 0.0
         context.scene.batch_clear_report = ""
 
+        MAP_OT_clear_split_normals._running = True
         wm = context.window_manager
         self._timer = wm.event_timer_add(0.01, window=context.window)
         wm.modal_handler_add(self)
@@ -352,7 +390,9 @@ class MAP_OT_build_atlas(bpy.types.Operator):
 
     def execute(self, context):
         mesh_objs = [o for o in context.scene.objects if o.type == 'MESH' and not o.hide_viewport]
-        if not mesh_objs: self.report({'ERROR'}, "场景中没有可见网格！"); return {'CANCELLED'}
+        if not mesh_objs:
+            self.report({'ERROR'}, "场景中没有可见网格！")
+            return {'CANCELLED'}
 
         material_to_key = {}
         color_groups = {}
@@ -372,37 +412,46 @@ class MAP_OT_build_atlas(bpy.types.Operator):
                     color_groups[key] = {'linear': lin, 'mats': set()}
                 color_groups[key]['mats'].add(mat)
 
-        entries = list(color_groups.items()); N = len(entries)
+        entries = list(color_groups.items())
+        N = len(entries)
         if N == 0:
             self.report({'ERROR'}, "未找到任何 Principled BSDF 材质，请先执行「一键挤出」！")
             return {'CANCELLED'}
-        grid_cols = math.ceil(math.sqrt(N)); grid_rows = math.ceil(N / grid_cols)
+        grid_cols = math.ceil(math.sqrt(N))
+        grid_rows = math.ceil(N / grid_cols)
 
         def next_pow2(x):
             p = 1
             while p < x: p <<= 1
             return p
 
-        img_w = next_pow2(grid_cols * self.BLOCK); img_h = next_pow2(grid_rows * self.BLOCK)
+        img_w = next_pow2(grid_cols * self.BLOCK)
+        img_h = next_pow2(grid_rows * self.BLOCK)
         atlas_name = "3DMap_ColorAtlas"
         if atlas_name in bpy.data.images: bpy.data.images.remove(bpy.data.images[atlas_name])
 
         img = bpy.data.images.new(atlas_name, width=img_w, height=img_h, alpha=True)
         img.colorspace_settings.name = 'sRGB'
-        pixels = [0.0] * (img_w * img_h * 4); color_uvs = {}
+        pixels = [0.0] * (img_w * img_h * 4)
+        color_uvs = {}
 
         for i, (key, data) in enumerate(entries):
-            col_idx = i % grid_cols; row_idx = i // grid_cols
-            sr = linear_to_srgb(data['linear'][0]); sg = linear_to_srgb(data['linear'][1])
-            sb = linear_to_srgb(data['linear'][2]); a = data['linear'][3]
-            px0 = col_idx * self.BLOCK; py0 = row_idx * self.BLOCK
+            col_idx = i % grid_cols
+            row_idx = i // grid_cols
+            sr = linear_to_srgb(data['linear'][0])
+            sg = linear_to_srgb(data['linear'][1])
+            sb = linear_to_srgb(data['linear'][2])
+            a = data['linear'][3]
+            px0 = col_idx * self.BLOCK
+            py0 = row_idx * self.BLOCK
             for dy in range(self.BLOCK):
                 for dx in range(self.BLOCK):
                     idx = ((py0 + dy) * img_w + (px0 + dx)) * 4
                     pixels[idx], pixels[idx+1], pixels[idx+2], pixels[idx+3] = sr, sg, sb, a
             color_uvs[key] = ((col_idx * self.BLOCK + self.BLOCK * 0.5) / img_w,
                               (row_idx * self.BLOCK + self.BLOCK * 0.5) / img_h)
-        img.pixels = pixels; img.pack()
+        img.pixels = pixels
+        img.pack()
 
         mat_opaque_name = "Mat_3DMap_Atlas_Opaque"
         mat_trans_name = "Mat_3DMap_Atlas_Transparent"
@@ -414,16 +463,19 @@ class MAP_OT_build_atlas(bpy.types.Operator):
         def setup_atlas_mat(name, is_transparent):
             mat = bpy.data.materials.new(name=name)
             mat.use_nodes = True
-            nodes = mat.node_tree.nodes; links = mat.node_tree.links
-            for n in nodes: nodes.remove(n)
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+            for n in nodes:
+                nodes.remove(n)
 
-            tex  = nodes.new('ShaderNodeTexImage')
+            tex = nodes.new('ShaderNodeTexImage')
             bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-            out  = nodes.new('ShaderNodeOutputMaterial')
-            tex.location  = (-320, 300)
-            bsdf.location = (  10, 300)
-            out.location  = ( 300, 300)
-            tex.image = img; tex.interpolation = 'Closest'
+            out = nodes.new('ShaderNodeOutputMaterial')
+            tex.location = (-320, 300)
+            bsdf.location = (10, 300)
+            out.location = (300, 300)
+            tex.image = img
+            tex.interpolation = 'Closest'
             bsdf.inputs['Roughness'].default_value = 0.2 if is_transparent else 0.8
 
             links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])

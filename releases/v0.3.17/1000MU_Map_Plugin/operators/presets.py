@@ -31,7 +31,7 @@ class MAP_OT_del_preset(bpy.types.Operator):
 class MAP_OT_reset_presets(bpy.types.Operator):
     bl_idname = "map.reset_presets"
     bl_label = "恢复内置默认值"
-    bl_description = "清空当前预设，恢复为插件内置的 10 条默认预设"
+    bl_description = f"清空当前预设，恢复为插件内置的 {len(BUILTIN_HEIGHT_PRESETS)} 条默认预设"
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self, context):
         prefs = context.preferences.addons[ADDON_MODULE].preferences
